@@ -1,7 +1,7 @@
 
 
 
-import os
+
 import sys
 import ast
 import random
@@ -74,7 +74,7 @@ def obfstr(string):
             key3 = ~key ^ ~magic
             keys.append(f"(lambda: chr({key2} ^ {key3}))()")
         elif logic == "<<":
-            magic = random.randint(1, DevMinhIOS)
+            magic = random.randint(1, )
             key3 = key << magic
             PT = ">>"
             keys.append(f"(lambda: chr({key3} {PT} {magic}))()")
@@ -92,7 +92,7 @@ def obfstr(string):
 def _byte(v):
     byte_array = bytearray()
     byte_array.extend(v.to_bytes((v.bit_length() + 7) // 8, 'big'))
-    return b"ducminhdev/" + byte_array
+    return b"encode/" + byte_array
 
 def obfint(v):
     n = rd()
@@ -170,25 +170,25 @@ globals()['{___import__}'] =  {varsobf('__import__')}
 
 globals()['tryᅠ'] =  {varsobf('print')}
 globals()['exceptᅠ'] =  {varsobf('input')}
-def {_join}(MinhDevTool,*k):
+def {_join}(july,*k):
     if k:
-        ducminhdev = '+'
+        encode = '+'
         op = "+"
     else:
-        ducminhdev = ''
+        encode = ''
         op = ''
     globals()['{__exx}'] = {obfint(True)}
     globals()['{_join}'] = {_join}
     globals()['{_str}'] = {_str}
-    globals()['MinhDevTool'] = MinhDevTool
-    for globals()['ducminhdev_'] in globals()['MinhDevTool']:
-        if not {__exx}:globals()['ducminhdev_'] += (lambda : '')()
-        ducminhdev += {_str}(ducminhdev_);f = {obfint(True)}
-    return ducminhdev
+    globals()['july'] = july
+    for globals()['encode_'] in globals()['july']:
+        if not {__exx}:globals()['encode_'] += (lambda : '')()
+        encode += {_str}(encode_);f = {obfint(True)}
+    return encode
 def H2SbF7(x):
     return {_int}(x-0x7777)
 def c2h6(e):
-    br = bytearray(e[len(b"ducminhdev/"):])
+    br = bytearray(e[len(b"encode/"):])
     r = 0
     for b in br:
         r = r * 256 + b
@@ -227,7 +227,7 @@ if {obfint(True)}:
         for _hex in j:
             {_argshexrun} += ({_hexrun}(_hex))
         return {_argshexrun}
-else:"ducminhdev"
+else:"encode"
 """
 
 
@@ -438,7 +438,7 @@ def _syntax(x):
         if node.name:
             for statement in node.body:
                 ten = ast.Try(
-                    body=[ast.parse(f"{_eval}('0/0')"),ast.parse(f"""if "quanhau" == "deptrai":{rd()},{rd()},{rd()},{rd()}\nelse:pass""")],
+                    body=[ast.parse(f"{_eval}('0/0')"),ast.parse(f"""if "ngocuyen" == "deptrai":{rd()},{rd()},{rd()},{rd()}\nelse:pass""")],
                     handlers=[
                         ast.ExceptHandler(
                             type=ast.Name(id='ZeroDivisionError', ctx=ast.Load()),
@@ -534,7 +534,7 @@ def random_match_case():
                     exc=ast.Call(
                         func=ast.Name(id="MemoryError", ctx=ast.Load()),
                         args=[],
-                        keywords=[ast.Constant(value=True)],
+                        keywords=[ast.Str(s=[True])],
                     ),)],
                     )
                 ],
@@ -587,7 +587,7 @@ def trycatch(body, loop):
                     exc=ast.Call(
                         func=ast.Name(id="MemoryError", ctx=ast.Load()),
                         args=[],
-                        keywords=[ast.Constant(value=True)],
+                        keywords=[ast.Str(s=[True])],
                     ),
                     cause=None,
                 )
@@ -616,29 +616,26 @@ purple = Colors.StaticMIX((Col.green, Col.yellow))
 bpurple = Colors.StaticMIX((Col.pink, Col.blue, Col.blue))
 
 text = f"""
-Tool Encode Anti - Debug
-CHẾ ĐỘ 1: OBF THẤP (DÀNH CHO TẤT CẢ TỆP) (DỄ DÀNG ĐẾN DEOBF)
-CHẾ ĐỘ 2: TRUNG BÌNH (LỰA CHỌN TỐT NHẤT) (CHUỖI ĐẦY ĐỦ, INT, OBF BOOL)
-CHẾ ĐỘ 3: CAO (KHÔNG KHUYẾN NGHỊ) (ĐÂY LÀ CHẾ ĐỘ TRUNG BÌNH NHƯNG X2 SPAM)
+- TOOL OBF BY DUCMINHDEV
+
+- MODE 1 : LOW OBF (FOR ALL FILE) (EZ TO DEOBF)
+- MODE 2 : MEDIUM (BEST CHOICE) (FULL STRING,INT,BOOL OBF)
+- MODE 3 : HIGH (NOT RECOMMEND) (IT IS MEDIUM MODE BUT X2 SPAM)
+
+- THANK FOR USE - TOOL ENC ANTI - DEBUG
 
 """
-banner = """
-\033[1;33m╔═══════════════════════════════════════════════╗
-\033[1;33m║\033[1;34m▶ Telegram  : \033[1;35m@minhiosfefe                     \033[1;33m║
-\033[1;33m║\033[1;34m▶ FaceBook : \033[1;35m@hoducminh.depzai                 \033[1;33m║
-\033[1;33m║\033[1;34m▶ Zalo : \033[1;35m0944921186                            \033[1;33m║
-\033[1;33m║\033[1;34m▶ DucMinhIOS - Tool Encode Anti-Debug          \033[1;33m║
-\033[1;33m║\033[1;34m▶ Tool Update And Fix By MinhIOS               \033[1;33m║
-\033[1;33m╚═══════════════════════════════════════════════╝
-\033[1;32m-------------------------------------------------"""
 
-os.system('cls' if os.name == 'nt' else 'clear')
-print(banner)
-print(text)
+banner = f"""
+"""
 
-def stage(text: str, symbol: str = 'ducminhdev', col1 = light, col2 = None) -> str:
+
+banner = Add.Add(text, banner, center=True)
+
+print(Colorate.Diagonal(Colors.DynamicMIX((purple, light)), banner))
+def stage(text: str, symbol: str = 'encode', col1 = light, col2 = None) -> str:
     if col2 is None:
-        col2 = light if symbol == 'ducminhdev' else purple
+        col2 = light if symbol == 'encode' else purple
     return f""" {Col.Symbol(symbol, col1, dark)} {Colorate.Diagonal(Colors.DynamicMIX((purple, light)), text)}{light}"""
 
 v = input
@@ -692,8 +689,8 @@ if '{sys.version[0]+sys.version[1]+sys.version[2]+sys.version[3]}' not in sys.ve
 """
 author = f"""
 ((
-    ((([["ducminhdev"],
-    ["https://fb.com/hoducminh.depzai"],
+    ((([["Tool Obf Anti-Debug By MinhDev"],
+    [" Tele : https://t.me/minhiosfefe"],
     ["PYTHON"],
     3.11
     ],
@@ -712,7 +709,7 @@ ch = set()
 am = {'builtins', '__main__'}
 
 def vv():
-    raise MemoryError('>> Bạn Định Dec! Xin lỗi Bạn Tuổi Lồn') from None
+    raise MemoryError('>> Bạn Tuổi Lồn Debug Nhé! - DucMinhDev') from None
 
 def cb(fn):
     if callable(fn) and fn.__module__ not in am:
@@ -823,35 +820,35 @@ else:
     code = author + var + f"""
 
 def bytecode():
-    ducminhdev = globals().update
+    MinhDevTool-OBF = globals().update
     if True:
-        ducminhdev({ngoac}**{ngoac} _hex({_uni("HoDucMinh")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("marshal")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("loads")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("marshal")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("loads")}){_ngoac}{_ngoac})
-    else:"ducminhdev"
+        MinhDevTool-OBF({ngoac}**{ngoac} _hex({_uni("en")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("marshal")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("loads")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("marshal")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("loads")}){_ngoac}{_ngoac})
+    else:"MinhDevTool-OBF"
     if 1>2:
         {obfint(3)}
     else:
-        ducminhdev({ngoac}**{ngoac}_hex({_uni("MinhDevTool")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("decompress")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("decompress")}){_ngoac}{_ngoac})
-    ducminhdev({ngoac}**{ngoac}_hex({_uni("DevToolByMinh")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("bz2")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("decompress")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("bz2")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("decompress")}){_ngoac}{_ngoac})
-    ducminhdev()
-    ducminhdev({ngoac}**{ngoac}_hex({_uni("_DevMinhIOS")}): {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("base64")}))).items() if {_movdiv}({_t}) and {_temp1} == _hex({_uni("b85decode")}){_ngoac}, **{ngoac}{_temp1}: {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("base64")}))).items() if {_movdiv}({_t}) and {_temp1} != _hex({_uni("b85decode")}){_ngoac}{_ngoac})
-    ducminhdev()
-    ducminhdev({ngoac}**{ngoac}_hex({_uni("ducminhdev")}): {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("builtins")}))).items() if {_movdiv}({_t}) and {_temp1} == _hex({_uni("exec")}){_ngoac}, **{ngoac}{_temp1}: {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("builtins")}))).items() if {_movdiv}({_t}) and {_temp1} != _hex({_uni("eval")}){_ngoac}{_ngoac})
+        MinhDevTool-OBF({ngoac}**{ngoac}_hex({_uni("july")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("decompress")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("decompress")}){_ngoac}{_ngoac})
+    MinhDevTool-OBF({ngoac}**{ngoac}_hex({_uni("birth")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("bz2")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("decompress")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("bz2")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("decompress")}){_ngoac}{_ngoac})
+    MinhDevTool-OBF()
+    MinhDevTool-OBF({ngoac}**{ngoac}_hex({_uni("_")}): {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("base64")}))).items() if {_movdiv}({_t}) and {_temp1} == _hex({_uni("b85decode")}){_ngoac}, **{ngoac}{_temp1}: {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("base64")}))).items() if {_movdiv}({_t}) and {_temp1} != _hex({_uni("b85decode")}){_ngoac}{_ngoac})
+    MinhDevTool-OBF()
+    MinhDevTool-OBF({ngoac}**{ngoac}_hex({_uni("MinhDevTool-OBF")}): {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("builtins")}))).items() if {_movdiv}({_t}) and {_temp1} == _hex({_uni("exec")}){_ngoac}, **{ngoac}{_temp1}: {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("builtins")}))).items() if {_movdiv}({_t}) and {_temp1} != _hex({_uni("eval")}){_ngoac}{_ngoac})
 bytecode()
 
-_HoDucMinh  {'  '* 999}={part1}
-_MinhDevTool  {'  '* 999}={part2}
-_DevToolByMinh  {'  '* 999}={part3}
-__DevMinhIOS  {'  '* 999}={part4}
+_en  {'  '* 999}={part1}
+_july  {'  '* 999}={part2}
+_birth  {'  '* 999}={part3}
+__  {'  '* 999}={part4}
 try:
-    ducminhdev(
-    HoDucMinh(
-    MinhDevTool(
-    DevToolByMinh(
-    _DevMinhIOS(
-    _HoDucMinh+_MinhDevTool+_DevToolByMinh+__DevMinhIOS)))))
+    MinhDevTool-OBF(
+    en(
+    july(
+    birth(
+    _(
+    _en+_july+_birth+__)))))
 except Exception as e:
     print(e)
 
 """
-open("ducminhdev-" + _file, "w", encoding="utf8").write(str(code))
-print(" Save in", "ducminhdev-" + _file)
+open("encode-" + _file, "w", encoding="utf8").write(str(code))
+print(" Save in ", "encode-" + _file)
