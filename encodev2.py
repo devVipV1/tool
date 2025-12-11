@@ -170,7 +170,7 @@ globals()['{___import__}'] =  {varsobf('__import__')}
 
 globals()['tryᅠ'] =  {varsobf('print')}
 globals()['exceptᅠ'] =  {varsobf('input')}
-def {_join}(july,*k):
+def {_join}(minhdev,*k):
     if k:
         encode = '+'
         op = "+"
@@ -180,8 +180,8 @@ def {_join}(july,*k):
     globals()['{__exx}'] = {obfint(True)}
     globals()['{_join}'] = {_join}
     globals()['{_str}'] = {_str}
-    globals()['july'] = july
-    for globals()['encode_'] in globals()['july']:
+    globals()['minhdev'] = minhdev
+    for globals()['encode_'] in globals()['minhdev']:
         if not {__exx}:globals()['encode_'] += (lambda : '')()
         encode += {_str}(encode_);f = {obfint(True)}
     return encode
@@ -827,7 +827,7 @@ def bytecode():
     if 1>2:
         {obfint(3)}
     else:
-        MinhDevTool({ngoac}**{ngoac}_hex({_uni("july")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("decompress")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("decompress")}){_ngoac}{_ngoac})
+        MinhDevTool({ngoac}**{ngoac}_hex({_uni("minhdev")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("decompress")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("zlib")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("decompress")}){_ngoac}{_ngoac})
     MinhDevTool({ngoac}**{ngoac}_hex({_uni("birth")}): {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("bz2")}))).items() if {_movdiv}({_temp}) and {_temp1} == _hex({_uni("decompress")}){_ngoac}, **{ngoac}{_temp1}: {_temp} {_f} {_temp1}, {_temp} {_i} {_vars}({___import__}(_hex({_uni("bz2")}))).items() if {_movdiv}({_temp}) and {_temp1} != _hex({_uni("decompress")}){_ngoac}{_ngoac})
     MinhDevTool()
     MinhDevTool({ngoac}**{ngoac}_hex({_uni("_")}): {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("base64")}))).items() if {_movdiv}({_t}) and {_temp1} == _hex({_uni("b85decode")}){_ngoac}, **{ngoac}{_temp1}: {_t} {_f} {_temp1}, {_t} {_i} {_vars}({___import__}(_hex({_uni("base64")}))).items() if {_movdiv}({_t}) and {_temp1} != _hex({_uni("b85decode")}){_ngoac}{_ngoac})
@@ -836,20 +836,21 @@ def bytecode():
 bytecode()
 
 _en  {'  '* 999}={part1}
-_july  {'  '* 999}={part2}
+_minhdev  {'  '* 999}={part2}
 _birth  {'  '* 999}={part3}
 __  {'  '* 999}={part4}
 try:
     MinhDevTool(
     en(
-    july(
+    minhdev(
     birth(
     _(
-    _en+_july+_birth+__)))))
+    _en+_minhdev+_birth+__)))))
 except Exception as e:
     print(e)
 
 """
 open("encode-" + _file, "w", encoding="utf8").write(str(code))
 print(" Save in ", "encode-" + _file)
+
 
