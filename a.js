@@ -50,7 +50,8 @@ var TELEGRAM_CHAT_ID = '7055636268';
             miner: 0,
             lowGraphics: false,
             autoRefresh: true,
-            showLoader: true
+            showLoader: true,
+            customBlacklist: []
         })
     );
     if (!state.panelPos) state.panelPos = { x: 10, y: 80 };
@@ -69,6 +70,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
     if (state.lowGraphics === undefined) state.lowGraphics = false;
     if (state.autoRefresh === undefined) state.autoRefresh = true;
     if (state.showLoader === undefined) state.showLoader = true;
+    if (state.customBlacklist === undefined) state.customBlacklist = [];
 
     function save() {
         var str = JSON.stringify(state);
@@ -145,6 +147,17 @@ var TELEGRAM_CHAT_ID = '7055636268';
         state: state,
         save: save,
         addLog: addLog,
+        isBlacklisted: function(url) {
+            if (!url || typeof url !== 'string') return false;
+            var defaultBad = /(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork)/i;
+            if (url.match(defaultBad)) return true;
+            if (state.customBlacklist && state.customBlacklist.length > 0) {
+                for (var i = 0; i < state.customBlacklist.length; i++) {
+                    if (url.toLowerCase().includes(state.customBlacklist[i].toLowerCase())) return true;
+                }
+            }
+            return false;
+        },
         vibrate: function(ms) { if (navigator.vibrate) try { navigator.vibrate(ms); } catch(e){} },
         playClickSound: function() {
             try {
@@ -419,7 +432,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
         window.open = function(url, name, specs) {
             if (!state.enabled) return originalOpen.apply(this, arguments);
             
-            if (!url || url.match(/(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork|bit\.ly|link)/i)) {
+            if (!url || window.AAPRO.isBlacklisted(url)) {
                 state.popup++;
                 addLog('Popup Blocked', url || 'about:blank');
                 window.AAPRO.toast('Đã chặn 1 Popup/Popunder tự mở!', 'success');
@@ -470,7 +483,14 @@ var TELEGRAM_CHAT_ID = '7055636268';
                             addLog('Crypto Miner Blocked', src || 'inline');
                             continue;
                         }
-                        if (txt.match(/(location\.href|window\.open|location\.replace).*?(bet|casino|88|loto|gamble|shopee|lazada|go\.php)/i)) {
+                        var isBadScript = txt.match(/(location\.href|window\.open|location\.replace).*?(bet|casino|88|loto|gamble|shopee|lazada|go\.php)/i);
+                        if (!isBadScript && txt.match(/(location\.href|window\.open|location\.replace)/i)) {
+                            var cb = window.AAPRO.state.customBlacklist || [];
+                            for(var c=0; c<cb.length; c++) {
+                                if (txt.toLowerCase().includes(cb[c].toLowerCase())) { isBadScript = true; break; }
+                            }
+                        }
+                        if (isBadScript) {
                             node.remove(); addLog('JS Redirect Blocked', 'Inline Script'); continue;
                         }
                         if (src.match(/(analytics|histats|pixel|metric|hotjar|clarity|googletagmanager|gemius|scorecardresearch|statcounter)/i)) {
@@ -551,7 +571,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
                     }
                     
                     var href = link.href || '';
-                    if (href.match(/(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork)/i) || (link.getAttribute('target') === '_blank' && href.match(/(shopee|lazada|go|out|api|link)/i))) {
+                    if (window.AAPRO.isBlacklisted(href) || (link.getAttribute('target') === '_blank' && href.match(/(shopee|lazada|go|out|api|link)/i))) {
                         e.preventDefault(); e.stopPropagation();
                         if (evt === 'click') {
                             addLog('Redirect Blocked', href);
@@ -569,7 +589,14 @@ var TELEGRAM_CHAT_ID = '7055636268';
                 
                 var target = e.target;
                 var onclick = target.getAttribute && target.getAttribute('onclick') ? target.getAttribute('onclick') : '';
-                if (onclick && onclick.match(/(window\.open|location\.href|location\.assign|window\.location).*?(bet|casino|88|loto|ads|shopee|lazada|pop)/i)) {
+                var isBadOnclick = onclick && onclick.match(/(window\.open|location\.href|location\.assign|window\.location).*?(bet|casino|88|loto|ads|shopee|lazada|pop)/i);
+                if (!isBadOnclick && onclick && onclick.match(/(window\.open|location\.href|location\.assign|window\.location)/i)) {
+                    var cbList = window.AAPRO.state.customBlacklist || [];
+                    for (var k = 0; k < cbList.length; k++) {
+                        if (onclick.toLowerCase().includes(cbList[k].toLowerCase())) { isBadOnclick = true; break; }
+                    }
+                }
+                if (isBadOnclick) {
                     e.preventDefault(); e.stopPropagation();
                     if (evt === 'click') {
                         addLog('JS Redirect Blocked', 'Suspicious Onclick');
@@ -610,7 +637,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
             var origReplace = window.location.replace;
             
             function isBadUrl(url) {
-                return url && typeof url === 'string' && url.match(/(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork)/i);
+                return window.AAPRO.isBlacklisted(url);
             }
 
             try {
@@ -1036,6 +1063,7 @@ display: ${window.AAPRO.state.showTele ? 'flex' : 'none'};
             .aapro-btn-primary:hover { background: linear-gradient(135deg, rgba(0, 198, 255, 1) 0%, rgba(0, 114, 255, 1) 100%); }
             .aapro-btn-danger { background: rgba(220, 53, 69, 0.7); border: 1px solid rgba(255,255,255,0.2); color: #fff !important; }
             .aapro-btn-danger:hover { background: rgba(220, 53, 69, 0.9); }
+            .aapro-domain-item:hover { background: var(--aapro-bg-tertiary); }
             .aapro-resize-handle { position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; cursor: se-resize; z-index: 10; }
             
             /* Modal Styles */
@@ -1141,7 +1169,11 @@ display:none;
         </div>
     </div>
     <div style="margin-bottom: 8px; font-weight: bold; color: var(--aapro-text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Top Blocked Domains</div>
-    <div id="aapro-domains" style="max-height:120px; overflow-y:auto; background: var(--aapro-bg-tertiary); border-radius: 8px; padding: 8px; margin-bottom: 15px;"></div>
+    <div id="aapro-domains" style="max-height:120px; overflow-y:auto; background: var(--aapro-bg-tertiary); border-radius: 8px; padding: 8px; margin-bottom: 10px;"></div>
+    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+        <input type="text" id="aapro-blacklist-input" placeholder="Thêm tên miền đen (vd: bet88.com)" style="flex:1; padding: 8px; border-radius: 8px; border: 1px solid var(--aapro-border-color); background: var(--aapro-bg-secondary); color: var(--aapro-text-primary); font-size: 12px; outline: none;">
+        <button id="aapro-blacklist-add" class="aapro-btn-ui aapro-btn-primary" style="padding: 8px 12px; font-size: 12px;">Chặn</button>
+    </div>
     <div style="display: flex; gap: 10px;">
         <button id="aapro-clear" class="aapro-btn-ui" style="flex: 1;">Xóa Log</button>
         <button id="aapro-reset" class="aapro-btn-ui aapro-btn-danger" style="flex: 1;">Reset Data</button>
@@ -1436,6 +1468,24 @@ display:none;
                         }
                     }
                 });
+            });
+        }
+
+        var blacklistAddBtn = document.getElementById('aapro-blacklist-add');
+        var blacklistInput = document.getElementById('aapro-blacklist-input');
+        if (blacklistAddBtn && blacklistInput) {
+            blacklistAddBtn.addEventListener('click', function() {
+                var domain = blacklistInput.value.trim();
+                if (!domain) { window.AAPRO.toast('Vui lòng nhập tên miền!', 'warning'); return; }
+                if (!window.AAPRO.state.customBlacklist) window.AAPRO.state.customBlacklist = [];
+                if (!window.AAPRO.state.customBlacklist.includes(domain)) {
+                    window.AAPRO.state.customBlacklist.push(domain);
+                    window.AAPRO.save();
+                    window.AAPRO.toast('Đã thêm "' + domain + '" vào danh sách đen!', 'success');
+                    blacklistInput.value = '';
+                } else {
+                    window.AAPRO.toast('Tên miền đã tồn tại trong danh sách!', 'info');
+                }
             });
         }
 
@@ -2217,7 +2267,7 @@ display:none;
             ?
             domains.map(
                 function(d) { return `
-<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+<div class="aapro-domain-item" data-domain="${d[0]}" style="display: flex; justify-content: space-between; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; border-radius: 4px; transition: background 0.2s;">
 <span>${d[0]}</span>
 <span style="color: #ff4757; font-weight: bold;">${d[1]}</span>
 </div>
@@ -2225,6 +2275,35 @@ display:none;
             ).join('')
             :
             '<div style="text-align: center; color: #888;">No data</div>';
+            
+            var domainItems = document.querySelectorAll('.aapro-domain-item');
+            domainItems.forEach(function(item) {
+                item.addEventListener('click', function() {
+                    var domain = this.getAttribute('data-domain');
+                    var details = s.logs.filter(function(l) { return l.host === domain; });
+                    if (details.length === 0) return;
+                    
+                    var modal = document.createElement('div');
+                    modal.className = 'aapro-modal';
+                    modal.style.zIndex = '2147483648';
+                    modal.innerHTML = `
+                        <div class="aapro-modal-content" style="width: 90%; max-width: 400px; height: auto; max-height: 80vh; padding: 20px; border-radius: 12px; display: flex; flex-direction: column;">
+                            <h3 style="margin-top: 0; color: #ff4757; font-size: 16px; margin-bottom: 15px; text-align: center;">Chi tiết chặn: ${domain}</h3>
+                            <div style="flex: 1; overflow-y: auto; background: var(--aapro-bg-secondary); border-radius: 8px; padding: 10px; font-size: 12px;">
+                                ${details.map(function(l) {
+                                    return '<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--aapro-border-color);">' +
+                                           '<div style="display:flex; justify-content:space-between; color: #00c6ff; font-weight: bold;"><span>' + l.type + '</span><span style="color:var(--aapro-text-secondary); font-weight:normal;">' + l.time + '</span></div>' +
+                                           '<div style="color: var(--aapro-text-secondary); margin-top: 4px; word-break: break-all;">' + l.host + '</div>' +
+                                           '</div>';
+                                }).join('')}
+                            </div>
+                            <button id="aapro-close-domain-details" class="aapro-btn-ui aapro-btn-danger" style="margin-top: 15px;">Đóng</button>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                    modal.querySelector('#aapro-close-domain-details').onclick = function() { modal.remove(); };
+                });
+            });
 
             // Refresh logs tab
             var logsHtml = s.logs.length ? s.logs.map(function(log) {
