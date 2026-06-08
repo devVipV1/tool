@@ -51,7 +51,8 @@ var TELEGRAM_CHAT_ID = '7055636268';
             lowGraphics: false,
             autoRefresh: true,
             showLoader: true,
-            customBlacklist: []
+            customBlacklist: [],
+            customWhitelist: []
         })
     );
     if (!state.panelPos) state.panelPos = { x: 10, y: 80 };
@@ -71,6 +72,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
     if (state.autoRefresh === undefined) state.autoRefresh = true;
     if (state.showLoader === undefined) state.showLoader = true;
     if (state.customBlacklist === undefined) state.customBlacklist = [];
+    if (state.customWhitelist === undefined) state.customWhitelist = [];
 
     function save() {
         var str = JSON.stringify(state);
@@ -154,6 +156,15 @@ var TELEGRAM_CHAT_ID = '7055636268';
             if (state.customBlacklist && state.customBlacklist.length > 0) {
                 for (var i = 0; i < state.customBlacklist.length; i++) {
                     if (url.toLowerCase().includes(state.customBlacklist[i].toLowerCase())) return true;
+                }
+            }
+            return false;
+        },
+        isSiteWhitelisted: function() {
+            var host = window.location.hostname;
+            if (state.customWhitelist && state.customWhitelist.length > 0) {
+                for (var i = 0; i < state.customWhitelist.length; i++) {
+                    if (host.toLowerCase().includes(state.customWhitelist[i].toLowerCase())) return true;
                 }
             }
             return false;
@@ -430,7 +441,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
         // 1. Chặn Popup bằng cách trả về Cửa sổ ảo (Tránh lỗi Crash JS)
         var originalOpen = window.open;
         window.open = function(url, name, specs) {
-            if (!state.enabled) return originalOpen.apply(this, arguments);
+            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return originalOpen.apply(this, arguments);
             
             if (!url || window.AAPRO.isBlacklisted(url)) {
                 state.popup++;
@@ -446,7 +457,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
             if (window.Notification) {
                 var OrigNotify = window.Notification;
                 window.Notification = function(title, options) {
-                    if (state.enabled) {
+                    if (state.enabled && !window.AAPRO.isSiteWhitelisted()) {
                         addLog('Notification Blocked', title || 'Unknown');
                         return { close: function(){}, onclick: null, onclose: null, onshow: null, onerror: null };
                     }
@@ -461,7 +472,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
 
         // 2. Observer: Xóa Iframe/Script quảng cáo
         var observer = new MutationObserver(function(mutations) {
-            if (!state.enabled) return;
+            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
             for (var i = 0; i < mutations.length; i++) {
                 var mutation = mutations[i];
                 for (var j = 0; j < mutation.addedNodes.length; j++) {
@@ -474,6 +485,15 @@ var TELEGRAM_CHAT_ID = '7055636268';
                             window.AAPRO.vibrate([15, 30, 15]); // Rung nhẹ báo chặn thành công
                             continue;
                         }
+                        if (node.tagName === 'META') {
+                            if (node.httpEquiv && node.httpEquiv.toLowerCase() === 'refresh') {
+                                var content = node.content || '';
+                                if (content.match(/(url=.*?(bet|casino|88|loto|ads|shopee|lazada))/i) || window.AAPRO.isBlacklisted(content)) {
+                                    node.remove();
+                                    addLog('Meta Refresh Blocked', 'Suspicious URL');
+                                }
+                            }
+                        }
                         if (node.tagName === 'IFRAME' || node.tagName === 'SCRIPT') {
                         var src = node.src || '';
                         var txt = node.textContent || '';
@@ -483,8 +503,8 @@ var TELEGRAM_CHAT_ID = '7055636268';
                             addLog('Crypto Miner Blocked', src || 'inline');
                             continue;
                         }
-                        var isBadScript = txt.match(/(location\.href|window\.open|location\.replace).*?(bet|casino|88|loto|gamble|shopee|lazada|go\.php)/i);
-                        if (!isBadScript && txt.match(/(location\.href|window\.open|location\.replace)/i)) {
+                        var isBadScript = txt.match(/(location\.href|window\.location|window\.open|location\.replace).*?(bet|casino|88|loto|gamble|shopee|lazada|go\.php)/i);
+                        if (!isBadScript && txt.match(/(location\.href|window\.location|window\.open|location\.replace)/i)) {
                             var cb = window.AAPRO.state.customBlacklist || [];
                             for(var c=0; c<cb.length; c++) {
                                 if (txt.toLowerCase().includes(cb[c].toLowerCase())) { isBadScript = true; break; }
@@ -521,7 +541,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
 
         // 3. DIỆT LỚP PHỦ TÀNG HÌNH (THỦ PHẠM GÂY LIỆT NÚT)
         document.addEventListener('mousedown', function(e) {
-            if (!state.enabled) return;
+            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
             var target = e.target;
             if (!target || !target.getBoundingClientRect) return;
 
@@ -550,7 +570,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
         // 3.5 BẮT SỰ KIỆN CLICK ĐỂ CHỐNG ĐIỀU HƯỚNG CỜ BẠC / POPUNDER
         ['click', 'mousedown', 'pointerdown'].forEach(function(evt) {
             document.addEventListener(evt, function(e) {
-                if (!state.enabled) return;
+                if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
                 
                 var link = e.target.closest('a');
                 if (link) {
@@ -609,7 +629,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
         // 4. YouTube Ad Blocker (Chặn video ads & banner)
         if (window.location.hostname.indexOf('youtube.com') !== -1) {
             setInterval(function() {
-                if (!state.enabled) return;
+                if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
                 var skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-skip-ad-button, .ytp-ad-skip-button-modern');
                 if (skipBtn) {
                     skipBtn.click();
@@ -641,13 +661,13 @@ var TELEGRAM_CHAT_ID = '7055636268';
             }
 
             try {
-                window.location.assign = function(url) { if (state.enabled && isBadUrl(url)) { addLog('Redirect Blocked', url); window.AAPRO.toast('Đã chặn chuyển hướng ngầm!', 'success'); return; } return origAssign.call(window.location, url); };
-                window.location.replace = function(url) { if (state.enabled && isBadUrl(url)) { addLog('Redirect Blocked', url); window.AAPRO.toast('Đã chặn chuyển hướng ngầm!', 'success'); return; } return origReplace.call(window.location, url); };
+                window.location.assign = function(url) { if (state.enabled && !window.AAPRO.isSiteWhitelisted() && isBadUrl(url)) { addLog('Redirect Blocked', url); window.AAPRO.toast('Đã chặn chuyển hướng ngầm!', 'success'); return; } return origAssign.call(window.location, url); };
+                window.location.replace = function(url) { if (state.enabled && !window.AAPRO.isSiteWhitelisted() && isBadUrl(url)) { addLog('Redirect Blocked', url); window.AAPRO.toast('Đã chặn chuyển hướng ngầm!', 'success'); return; } return origReplace.call(window.location, url); };
             } catch(e) {}
 
             var origClick = HTMLElement.prototype.click;
             HTMLElement.prototype.click = function() {
-                if (state.enabled && this.tagName === 'A' && isBadUrl(this.href)) { addLog('Script Click Blocked', this.href); return; }
+                if (state.enabled && !window.AAPRO.isSiteWhitelisted() && this.tagName === 'A' && isBadUrl(this.href)) { addLog('Script Click Blocked', this.href); return; }
                 return origClick.apply(this, arguments);
             };
         })();
@@ -1064,7 +1084,8 @@ display: ${window.AAPRO.state.showTele ? 'flex' : 'none'};
             .aapro-btn-danger { background: rgba(220, 53, 69, 0.7); border: 1px solid rgba(255,255,255,0.2); color: #fff !important; }
             .aapro-btn-danger:hover { background: rgba(220, 53, 69, 0.9); }
             .aapro-domain-item:hover { background: var(--aapro-bg-tertiary); }
-            .aapro-resize-handle { position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; cursor: se-resize; z-index: 10; }
+            .aapro-resize-handle { position: absolute; bottom: 0; right: 0; width: 35px; height: 35px; cursor: se-resize; z-index: 10; display: flex; align-items: flex-end; justify-content: flex-end; padding: 8px; }
+            .aapro-resize-handle::after { content: ''; width: 12px; height: 12px; border-right: 2px solid var(--aapro-text-secondary); border-bottom: 2px solid var(--aapro-text-secondary); border-bottom-right-radius: 2px; }
             
             /* Modal Styles */
             .aapro-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2147483647; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-family: 'Segoe UI', sans-serif; }
@@ -1170,9 +1191,13 @@ display:none;
     </div>
     <div style="margin-bottom: 8px; font-weight: bold; color: var(--aapro-text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Top Blocked Domains</div>
     <div id="aapro-domains" style="max-height:120px; overflow-y:auto; background: var(--aapro-bg-tertiary); border-radius: 8px; padding: 8px; margin-bottom: 10px;"></div>
-    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
         <input type="text" id="aapro-blacklist-input" placeholder="Thêm tên miền đen (vd: bet88.com)" style="flex:1; padding: 8px; border-radius: 8px; border: 1px solid var(--aapro-border-color); background: var(--aapro-bg-secondary); color: var(--aapro-text-primary); font-size: 12px; outline: none;">
         <button id="aapro-blacklist-add" class="aapro-btn-ui aapro-btn-primary" style="padding: 8px 12px; font-size: 12px;">Chặn</button>
+    </div>
+    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+        <input type="text" id="aapro-whitelist-input" placeholder="Tên miền trắng (vd: myweb.com)" style="flex:1; padding: 8px; border-radius: 8px; border: 1px solid var(--aapro-border-color); background: var(--aapro-bg-secondary); color: var(--aapro-text-primary); font-size: 12px; outline: none;">
+        <button id="aapro-whitelist-add" class="aapro-btn-ui" style="padding: 8px 12px; font-size: 12px; background: #28a745; border-color: #28a745; color: #fff;">Bỏ qua</button>
     </div>
     <div style="display: flex; gap: 10px;">
         <button id="aapro-clear" class="aapro-btn-ui" style="flex: 1;">Xóa Log</button>
@@ -1489,6 +1514,24 @@ display:none;
             });
         }
 
+        var whitelistAddBtn = document.getElementById('aapro-whitelist-add');
+        var whitelistInput = document.getElementById('aapro-whitelist-input');
+        if (whitelistAddBtn && whitelistInput) {
+            whitelistAddBtn.addEventListener('click', function() {
+                var domain = whitelistInput.value.trim();
+                if (!domain) { window.AAPRO.toast('Vui lòng nhập tên miền!', 'warning'); return; }
+                if (!window.AAPRO.state.customWhitelist) window.AAPRO.state.customWhitelist = [];
+                if (!window.AAPRO.state.customWhitelist.includes(domain)) {
+                    window.AAPRO.state.customWhitelist.push(domain);
+                    window.AAPRO.save();
+                    window.AAPRO.toast('Đã thêm "' + domain + '" vào Danh sách trắng!', 'success');
+                    whitelistInput.value = '';
+                } else {
+                    window.AAPRO.toast('Tên miền đã tồn tại trong danh sách trắng!', 'info');
+                }
+            });
+        }
+
         // Theme Toggle Logic
         var themeBtn = document.getElementById('aapro-theme-toggle');
         themeBtn.addEventListener('click', function() {
@@ -1666,17 +1709,21 @@ display:none;
             resizing = true;
             pStartW = panel.offsetWidth;
             pStartH = panel.offsetHeight;
-            pResizeStartX = e.clientX;
-            pResizeStartY = e.clientY;
-            document.addEventListener('mousemove', pResizeMove, { passive: true });
-            document.addEventListener('mouseup', pResizeEnd, { once: true });
-            e.preventDefault();
+            var touch = e.touches ? e.touches[0] : e;
+            pResizeStartX = touch.clientX;
+            pResizeStartY = touch.clientY;
+            document.addEventListener('mousemove', pResizeMove, { passive: false });
+            document.addEventListener('touchmove', pResizeMove, { passive: false });
+            document.addEventListener('mouseup', pResizeEnd);
+            document.addEventListener('touchend', pResizeEnd);
+            if (e.cancelable && e.type === 'touchstart') e.preventDefault();
         }
 
         function pResizeMove(e) {
             if (!resizing) return;
-            rCurrentW = pStartW + (e.clientX - pResizeStartX);
-            rCurrentH = pStartH + (e.clientY - pResizeStartY);
+            var touch = e.touches ? e.touches[0] : e;
+            rCurrentW = pStartW + (touch.clientX - pResizeStartX);
+            rCurrentH = pStartH + (touch.clientY - pResizeStartY);
             if (!rRafId) {
                 rRafId = requestAnimationFrame(function() {
                     panel.style.width = Math.max(280, rCurrentW) + 'px';
@@ -1684,16 +1731,21 @@ display:none;
                     rRafId = null;
                 });
             }
+            if (e.cancelable && e.type === 'touchmove') e.preventDefault();
         }
 
         function pResizeEnd() {
             resizing = false;
             if (rRafId) { cancelAnimationFrame(rRafId); rRafId = null; }
             document.removeEventListener('mousemove', pResizeMove);
+            document.removeEventListener('touchmove', pResizeMove);
+            document.removeEventListener('mouseup', pResizeEnd);
+            document.removeEventListener('touchend', pResizeEnd);
             window.AAPRO.state.panelSize = { w: panel.offsetWidth, h: panel.offsetHeight };
             window.AAPRO.save();
         }
         resizeHandle.addEventListener('mousedown', pResizeStart);
+        resizeHandle.addEventListener('touchstart', pResizeStart, { passive: false });
 
         // Zip Feature Logic
         var getZipBtn = document.getElementById('aapro-get-zip');
