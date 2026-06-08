@@ -83,23 +83,19 @@ var TELEGRAM_CHAT_ID = '7055636268';
             .toLocaleTimeString();
     }
     function shortDomain(url) {
+        if (!url) return 'unknown';
+        var host = url;
         try {
-            var host =
-                new URL(url)
-                .hostname;
-            if (
-                host.length > 22
-            ) {
-                host =
-                    host.substring(
-                        0,
-                        22
-                    ) + '...';
-            }
-            return host;
+            // Tự động phân tích các đường dẫn tương đối (relative path)
+            host = new URL(url, window.location.origin).hostname || url;
         } catch(e) {
-            return 'unknown';
+            host = url; // Nếu không phải link, giữ nguyên mô tả hành vi (VD: "Suspicious Onclick")
         }
+        if (typeof host === 'string') {
+            host = host.replace(/^www\./i, ''); // Cắt bỏ www. cho gọn
+            if (host.length > 25) host = host.substring(0, 25) + '...';
+        }
+        return host || 'unknown';
     }
     function addLog(type, url) {
         var host =
