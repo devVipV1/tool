@@ -151,7 +151,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
         addLog: addLog,
         isBlacklisted: function(url) {
             if (!url || typeof url !== 'string') return false;
-            var defaultBad = /(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork|bit\.ly)/i;
+            var defaultBad = /(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork)/i;
             if (url.match(defaultBad)) return true;
             if (state.customBlacklist && state.customBlacklist.length > 0) {
                 for (var i = 0; i < state.customBlacklist.length; i++) {
@@ -255,6 +255,139 @@ var TELEGRAM_CHAT_ID = '7055636268';
         }
     };
     applyLowGraphics();
+
+    // ====================================
+    // LÕI CHẶN QUẢNG CÁO SIÊU TỐC (CẢI TIẾN TỪ B.JS)
+    // ====================================
+    (function() {
+        var originalOpen = window.open;
+        window.open = function(url, name, specs) {
+            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return originalOpen.apply(this, arguments);
+            if (!url || url.match(/(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork|bit\.ly|link)/i) || window.AAPRO.isBlacklisted(url)) {
+                state.popup++; addLog('Popup Blocked', url || 'about:blank');
+                return { close: function(){}, focus: function(){}, blur: function(){}, postMessage: function(){}, closed: false, location: { href: url || '' } };
+            }
+            return originalOpen.apply(this, arguments);
+        };
+        if (window.Notification) {
+            var OrigNotify = window.Notification;
+            window.Notification = function(title, options) {
+                if (state.enabled && !window.AAPRO.isSiteWhitelisted()) { addLog('Notification Blocked', title || 'Unknown'); return { close: function(){}, onclick: null, onclose: null, onshow: null, onerror: null }; }
+                return new OrigNotify(title, options);
+            };
+            window.Notification.requestPermission = function() { return Promise.resolve('denied'); };
+            try { Object.defineProperty(window.Notification, 'permission', { get: function() { return 'denied'; } }); } catch(e) {}
+        }
+        var observer = new MutationObserver(function(mutations) {
+            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
+            for (var i = 0; i < mutations.length; i++) {
+                var mutation = mutations[i];
+                for (var j = 0; j < mutation.addedNodes.length; j++) {
+                    var node = mutation.addedNodes[j];
+                    if (node.nodeType === 1) {
+                        var tagName = node.tagName;
+                        if (tagName === 'IFRAME' || tagName === 'SCRIPT') {
+                            var src = node.src || '';
+                            var txt = node.textContent || '';
+                            var isBadScript = src.match(/(ads|pop|track|banner)/i) || txt.match(/(location\.href|window\.open|location\.replace).*?(bet|casino|88|loto|gamble|shopee|lazada|go\.php)/i);
+                            
+                            if (!isBadScript && txt.match(/(location\.href|window\.open|location\.replace)/i)) {
+                                var cb = window.AAPRO.state.customBlacklist || [];
+                                for(var c=0; c<cb.length; c++) { if (txt.toLowerCase().includes(cb[c].toLowerCase())) { isBadScript = true; break; } }
+                            }
+                            if (isBadScript) { 
+                                node.remove(); state.iframe++; save();
+                                if (txt) addLog('JS Redirect Blocked', 'Inline Script'); 
+                                continue; 
+                            }
+                        } else if (tagName === 'META') {
+                            if (node.httpEquiv && node.httpEquiv.toLowerCase() === 'refresh') {
+                                var content = node.content || '';
+                                if (content.match(/(url=.*?(bet|casino|88|loto|ads|shopee|lazada))/i) || window.AAPRO.isBlacklisted(content)) {
+                                    node.remove(); addLog('Meta Refresh Blocked', 'Suspicious URL');
+                                }
+                            }
+                        } else if (tagName === 'DIV') {
+                            var cls = typeof node.className === 'string' ? node.className : '';
+                            var idCls = (node.id + ' ' + cls).toLowerCase();
+                            if (idCls && idCls.match(/(adblock|anti-ad|detect-ad|adb-modal)/)) {
+                                node.style.display = 'none'; addLog('Anti-Adblock', 'Bypassed');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        if (document.documentElement) { observer.observe(document.documentElement, { childList: true, subtree: true }); }
+        document.addEventListener('mousedown', function(e) {
+            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
+            var target = e.target;
+            if (!target || !target.getBoundingClientRect) return;
+            if (target.tagName === 'BODY' || target.tagName === 'HTML' || target.tagName === 'MAIN') return;
+            if (target.closest('#aapro-btn') || target.closest('#aapro-panel') || target.closest('#aapro-quick-share')) return;
+            var rect = target.getBoundingClientRect();
+            if (rect.width > window.innerWidth * 0.8 && rect.height > window.innerHeight * 0.8) {
+                var style = window.getComputedStyle(target);
+                if (style.position === 'absolute' || style.position === 'fixed') {
+                    if (style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent') {
+                        target.remove(); addLog('Overlay Removed', 'Clickjacking Shield');
+                    }
+                }
+            }
+        }, true);
+        ['click', 'mousedown', 'pointerdown'].forEach(function(evt) {
+            document.addEventListener(evt, function(e) {
+                if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
+                var link = e.target.closest('a');
+                if (link) {
+                    var rect = link.getBoundingClientRect();
+                    var style = window.getComputedStyle(link);
+                    var hasMedia = link.querySelector('img, video, canvas, picture');
+                    if (!hasMedia && ((rect.width > window.innerWidth * 0.7 && rect.height > window.innerHeight * 0.7) || style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none')) {
+                        e.preventDefault(); e.stopPropagation(); link.remove();
+                        if (evt === 'click') addLog('Invisible Link Blocked', link.href);
+                        return;
+                    }
+                    var href = link.href || '';
+                    if (href.match(/(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork)/i) || window.AAPRO.isBlacklisted(href) || (link.getAttribute('target') === '_blank' && href.match(/(shopee|lazada|go|out|api|link)/i))) {
+                        e.preventDefault(); e.stopPropagation();
+                        if (evt === 'click') { addLog('Redirect Blocked', href); window.AAPRO.toast('Đã chặn chuyển hướng!', 'success'); }
+                        return;
+                    }
+                    if (link.getAttribute('target') === '_blank' && !href.includes(location.hostname) && !href.startsWith('#') && !href.startsWith('javascript:')) { link.removeAttribute('target'); }
+                }
+                var target = e.target;
+                var onclick = target.getAttribute && target.getAttribute('onclick') ? target.getAttribute('onclick') : '';
+                var isBadOnclick = onclick && onclick.match(/(window\.open|location\.href|location\.assign|window\.location).*?(bet|casino|88|loto|ads|shopee|lazada|pop)/i);
+                if (!isBadOnclick && onclick && onclick.match(/(window\.open|location\.href|location\.assign|window\.location)/i)) {
+                    var cbList = window.AAPRO.state.customBlacklist || [];
+                    for (var k = 0; k < cbList.length; k++) { if (onclick.toLowerCase().includes(cbList[k].toLowerCase())) { isBadOnclick = true; break; } }
+                }
+                if (isBadOnclick) { e.preventDefault(); e.stopPropagation(); if (evt === 'click') { addLog('JS Redirect Blocked', 'Suspicious Onclick'); window.AAPRO.toast('Đã chặn chuyển hướng!', 'success'); } }
+            }, true);
+        });
+        if (window.location.hostname.indexOf('youtube.com') !== -1) {
+            setInterval(function() {
+                if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
+                var skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-skip-ad-button, .ytp-ad-skip-button-modern');
+                if (skipBtn) { skipBtn.click(); addLog('YouTube Ad', 'Skipped Video Ad'); } 
+                else { var video = document.querySelector('video'); if (video && document.querySelector('.ad-showing')) { video.currentTime = video.duration || 9999; addLog('YouTube Ad', 'Fast-forwarded Video Ad'); } }
+                var overlayAds = document.querySelectorAll('.ytp-ad-overlay-container, ytd-ad-slot-renderer, ytd-promoted-sparkles-web-renderer, ytd-in-feed-ad-layout-renderer');
+                overlayAds.forEach(function(ad) { if (ad.style.display !== 'none') { ad.style.display = 'none'; addLog('YouTube Ad', 'Removed Banner/Overlay'); } });
+            }, 500);
+        }
+        (function() {
+            var origAssign = window.location.assign;
+            var origReplace = window.location.replace;
+            function isBadUrl(url) { return url && typeof url === 'string' && (url.match(/(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork)/i) || window.AAPRO.isBlacklisted(url)); }
+            try { 
+                window.location.assign = function(url) { if (state.enabled && !window.AAPRO.isSiteWhitelisted() && isBadUrl(url)) { addLog('Redirect Blocked', url); return; } return origAssign.call(window.location, url); }; 
+                window.location.replace = function(url) { if (state.enabled && !window.AAPRO.isSiteWhitelisted() && isBadUrl(url)) { addLog('Redirect Blocked', url); return; } return origReplace.call(window.location, url); }; 
+            } catch(e) {}
+            var origClick = HTMLElement.prototype.click;
+            HTMLElement.prototype.click = function() { if (state.enabled && !window.AAPRO.isSiteWhitelisted() && this.tagName === 'A' && isBadUrl(this.href)) { addLog('Script Click Blocked', this.href); return; } return origClick.apply(this, arguments); };
+        })();
+    })();
 
     // AUTO-REFRESH KHI SẬP SERVER
     window.addEventListener('load', function() {
@@ -365,18 +498,9 @@ var TELEGRAM_CHAT_ID = '7055636268';
             `;
             document.body.appendChild(loader);
             setTimeout(function() {
-                loader.querySelector('p').innerText = "Đang rà quét Tracker & Scripts ngầm...";
-                setTimeout(function() {
-                    loader.querySelector('p').innerText = "Thiết lập tường lửa Anti-Redirect...";
-                    setTimeout(function() {
-                        loader.querySelector('p').innerText = "Hệ thống bảo vệ hoàn tất!";
-                        setTimeout(function() {
-                            loader.style.opacity = '0';
-                            setTimeout(function() { if (loader.parentNode) loader.remove(); }, 800);
-                        }, 1000);
-                    }, 1200);
-                }, 1200);
-            }, 1000);
+                loader.style.opacity = '0';
+                setTimeout(function() { if (loader.parentNode) loader.remove(); }, 400);
+            }, 600);
         }
     });
 
@@ -433,237 +557,6 @@ var TELEGRAM_CHAT_ID = '7055636268';
             document.dispatchEvent(new CustomEvent('AAPRO_PANEL'));
         }
     });
-
-    // ====================================
-    // LÕI CHẶN QUẢNG CÁO AN TOÀN (KHÔNG LÀM ĐƠ WEB)
-    // ====================================
-    (function() {
-        // 1. Chặn Popup bằng cách trả về Cửa sổ ảo (Tránh lỗi Crash JS)
-        var originalOpen = window.open;
-        window.open = function(url, name, specs) {
-            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return originalOpen.apply(this, arguments);
-            
-            if (!url || window.AAPRO.isBlacklisted(url)) {
-                state.popup++;
-                addLog('Popup Blocked', url || 'about:blank');
-                window.AAPRO.toast('Đã chặn 1 Popup/Popunder tự mở!', 'success');
-                return { close: function(){}, focus: function(){}, blur: function(){}, postMessage: function(){}, closed: false, location: { href: url || '' } };
-            }
-            return originalOpen.apply(this, arguments);
-        };
-
-        // 1.5 Chặn Thông báo đẩy (Push Notifications)
-        (function() {
-            if (window.Notification) {
-                var OrigNotify = window.Notification;
-                window.Notification = function(title, options) {
-                    if (state.enabled && !window.AAPRO.isSiteWhitelisted()) {
-                        addLog('Notification Blocked', title || 'Unknown');
-                        return { close: function(){}, onclick: null, onclose: null, onshow: null, onerror: null };
-                    }
-                    return new OrigNotify(title, options);
-                };
-                window.Notification.requestPermission = function() {
-                    return Promise.resolve('denied');
-                };
-                try { Object.defineProperty(window.Notification, 'permission', { get: function() { return 'denied'; } }); } catch(e) {}
-            }
-        })();
-
-        // 2. Observer: Xóa Iframe/Script quảng cáo
-        var observer = new MutationObserver(function(mutations) {
-            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
-            for (var i = 0; i < mutations.length; i++) {
-                var mutation = mutations[i];
-                for (var j = 0; j < mutation.addedNodes.length; j++) {
-                    var node = mutation.addedNodes[j];
-                    if (node.nodeType === 1) { // Kiểm tra Element Node
-                        var idCls = (node.id + ' ' + node.className).toLowerCase();
-                        if (idCls.match(/(adblock|anti-ad|detect-ad|adb-modal)/)) {
-                            node.style.display = 'none';
-                            addLog('Anti-Adblock', 'Bypassed');
-                            window.AAPRO.vibrate([15, 30, 15]); // Rung nhẹ báo chặn thành công
-                            continue;
-                        }
-                        if (node.tagName === 'META') {
-                            if (node.httpEquiv && node.httpEquiv.toLowerCase() === 'refresh') {
-                                var content = node.content || '';
-                                if (content.match(/(url=.*?(bet|casino|88|loto|ads|shopee|lazada))/i) || window.AAPRO.isBlacklisted(content)) {
-                                    node.remove();
-                                    addLog('Meta Refresh Blocked', 'Suspicious URL');
-                                }
-                            }
-                        }
-                        if (node.tagName === 'IFRAME' || node.tagName === 'SCRIPT') {
-                        var src = node.src || '';
-                        var txt = node.textContent || '';
-                        if (src.match(/(miner|coinhive|monero|xmr)/i) || txt.match(/(coin-hive|cryptonight|webminepool)/i)) {
-                            node.remove();
-                            state.miner++; save();
-                            addLog('Crypto Miner Blocked', src || 'inline');
-                            continue;
-                        }
-                        var isBadScript = txt.match(/(location\.href|window\.location|window\.open|location\.replace).*?(bet|casino|88|loto|gamble|shopee|lazada|go\.php)/i);
-                        if (!isBadScript && txt.match(/(location\.href|window\.location|window\.open|location\.replace)/i)) {
-                            var cb = window.AAPRO.state.customBlacklist || [];
-                            for(var c=0; c<cb.length; c++) {
-                                if (txt.toLowerCase().includes(cb[c].toLowerCase())) { isBadScript = true; break; }
-                            }
-                        }
-                        if (isBadScript) {
-                            node.remove(); addLog('JS Redirect Blocked', 'Inline Script'); continue;
-                        }
-                        if (src.match(/(analytics|histats|pixel|metric|hotjar|clarity|googletagmanager|gemius|scorecardresearch|statcounter)/i)) {
-                            node.remove(); // Bắt buộc xóa lập tức (Không dùng setTimeout để ngăn thực thi JS)
-                            state.tracker++;
-                            save();
-                        } else if (src.match(/(ads|pop|track|banner)/i)) {
-                            node.remove(); // Bắt buộc xóa lập tức giống 100% thuật toán của b.js
-                            state.iframe++;
-                            save();
-                        }
-                    }
-                    }
-                }
-            }
-        });
-        if (document.documentElement) {
-            observer.observe(document.documentElement, { childList: true, subtree: true });
-        }
-
-        // 3. DIỆT LỚP PHỦ TÀNG HÌNH (THỦ PHẠM GÂY LIỆT NÚT)
-        document.addEventListener('mousedown', function(e) {
-            if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
-            var target = e.target;
-            if (!target || !target.getBoundingClientRect) return;
-
-            // Bỏ qua các thẻ gốc và thẻ dàn trang (tránh lỗi trắng trang khi chạm vuốt/thanh cuộn)
-            if (target.tagName === 'BODY' || target.tagName === 'HTML' || target.tagName === 'MAIN') return;
-
-            // Bỏ qua nếu click vào Bảng điều khiển hoặc nút chia sẻ nhanh
-            if (target.closest('#aapro-btn') || target.closest('#aapro-panel') || target.closest('#aapro-quick-share')) return;
-
-            var rect = target.getBoundingClientRect();
-            // Nếu phần tử bao phủ hơn 80% màn hình
-            if (rect.width > window.innerWidth * 0.8 && rect.height > window.innerHeight * 0.8) {
-                var style = window.getComputedStyle(target);
-                // Lớp phủ quảng cáo thường dùng vị trí cố định
-                if (style.position === 'absolute' || style.position === 'fixed') {
-                    // Nếu nó tàng hình (trong suốt)
-                    if (style.opacity === '0' || style.backgroundColor === 'rgba(0, 0, 0, 0)' || style.backgroundColor === 'transparent') {
-                        target.remove();
-                        addLog('Overlay Removed', 'Clickjacking Shield');
-                        window.AAPRO.vibrate(15); // Rung khi xóa lớp phủ trong suốt
-                    }
-                }
-            }
-        }, true);
-
-        // 3.5 BẮT SỰ KIỆN CLICK ĐỂ CHỐNG ĐIỀU HƯỚNG CỜ BẠC / POPUNDER
-        ['click', 'mousedown', 'pointerdown'].forEach(function(evt) {
-            document.addEventListener(evt, function(e) {
-                if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
-                
-                var link = e.target.closest('a');
-                if (link) {
-                    var rect = link.getBoundingClientRect();
-                    var style = window.getComputedStyle(link);
-                    
-                    // CỨU CÁNH CHO TRUYỆN TRANH: Nếu thẻ A chứa hình ảnh/video thì không xóa (để thao tác chuyển chap hoạt động)
-                    var hasMedia = link.querySelector('img, video, canvas, picture');
-                    
-                    if (!hasMedia && ((rect.width > window.innerWidth * 0.7 && rect.height > window.innerHeight * 0.7) || style.opacity === '0' || style.visibility === 'hidden' || style.display === 'none')) {
-                        e.preventDefault(); e.stopPropagation();
-                        link.remove();
-                        if (evt === 'click') {
-                            addLog('Invisible Link Blocked', link.href);
-                            window.AAPRO.vibrate([15, 30]);
-                        }
-                        return;
-                    }
-                    
-                    var href = link.href || '';
-                    if (window.AAPRO.isBlacklisted(href) || (link.getAttribute('target') === '_blank' && href.match(/(shopee|lazada|go|out|api|link)/i))) {
-                        e.preventDefault(); e.stopPropagation();
-                        if (evt === 'click') {
-                            addLog('Redirect Blocked', href);
-                            window.AAPRO.vibrate([15, 30]);
-                            window.AAPRO.toast('Đã chặn link quảng cáo chuyển hướng!', 'success');
-                        }
-                        return;
-                    }
-
-                    // Loại bỏ target="_blank" trên thẻ A ngoại lai để không bị mở tab mới lén lút (Popunder)
-                    if (link.getAttribute('target') === '_blank' && !href.includes(location.hostname) && !href.startsWith('#') && !href.startsWith('javascript:')) {
-                        link.removeAttribute('target');
-                    }
-                }
-                
-                var target = e.target;
-                var onclick = target.getAttribute && target.getAttribute('onclick') ? target.getAttribute('onclick') : '';
-                var isBadOnclick = onclick && onclick.match(/(window\.open|location\.href|location\.assign|window\.location).*?(bet|casino|88|loto|ads|shopee|lazada|pop)/i);
-                if (!isBadOnclick && onclick && onclick.match(/(window\.open|location\.href|location\.assign|window\.location)/i)) {
-                    var cbList = window.AAPRO.state.customBlacklist || [];
-                    for (var k = 0; k < cbList.length; k++) {
-                        if (onclick.toLowerCase().includes(cbList[k].toLowerCase())) { isBadOnclick = true; break; }
-                    }
-                }
-                if (isBadOnclick) {
-                    e.preventDefault(); e.stopPropagation();
-                    if (evt === 'click') {
-                        addLog('JS Redirect Blocked', 'Suspicious Onclick');
-                        window.AAPRO.toast('Đã chặn chuyển hướng độc hại!', 'success');
-                    }
-                }
-            }, true);
-        });
-
-        // 4. YouTube Ad Blocker (Chặn video ads & banner)
-        if (window.location.hostname.indexOf('youtube.com') !== -1) {
-            setInterval(function() {
-                if (!state.enabled || window.AAPRO.isSiteWhitelisted()) return;
-                var skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-skip-ad-button, .ytp-ad-skip-button-modern');
-                if (skipBtn) {
-                    skipBtn.click();
-                    addLog('YouTube Ad', 'Skipped Video Ad');
-                } else {
-                    var video = document.querySelector('video');
-                    if (video && document.querySelector('.ad-showing')) {
-                        video.currentTime = video.duration || 9999;
-                        addLog('YouTube Ad', 'Fast-forwarded Video Ad');
-                    }
-                }
-                var overlayAds = document.querySelectorAll('.ytp-ad-overlay-container, ytd-ad-slot-renderer, ytd-promoted-sparkles-web-renderer, ytd-in-feed-ad-layout-renderer');
-                overlayAds.forEach(function(ad) {
-                    if (ad.style.display !== 'none') {
-                        ad.style.display = 'none';
-                        addLog('YouTube Ad', 'Removed Banner/Overlay');
-                    }
-                });
-            }, 500);
-        }
-
-        // 5. AGGRESSIVE ANTI-REDIRECT (Chặn trang tự động chuyển hướng qua cửa sổ JS ẩn)
-        (function() {
-            var origAssign = window.location.assign;
-            var origReplace = window.location.replace;
-            
-            function isBadUrl(url) {
-                return window.AAPRO.isBlacklisted(url);
-            }
-
-            try {
-                window.location.assign = function(url) { if (state.enabled && !window.AAPRO.isSiteWhitelisted() && isBadUrl(url)) { addLog('Redirect Blocked', url); window.AAPRO.toast('Đã chặn chuyển hướng ngầm!', 'success'); return; } return origAssign.call(window.location, url); };
-                window.location.replace = function(url) { if (state.enabled && !window.AAPRO.isSiteWhitelisted() && isBadUrl(url)) { addLog('Redirect Blocked', url); window.AAPRO.toast('Đã chặn chuyển hướng ngầm!', 'success'); return; } return origReplace.call(window.location, url); };
-            } catch(e) {}
-
-            var origClick = HTMLElement.prototype.click;
-            HTMLElement.prototype.click = function() {
-                if (state.enabled && !window.AAPRO.isSiteWhitelisted() && this.tagName === 'A' && isBadUrl(this.href)) { addLog('Script Click Blocked', this.href); return; }
-                return origClick.apply(this, arguments);
-            };
-        })();
-    })();
 
 })();
 
