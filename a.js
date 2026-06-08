@@ -151,7 +151,7 @@ var TELEGRAM_CHAT_ID = '7055636268';
         addLog: addLog,
         isBlacklisted: function(url) {
             if (!url || typeof url !== 'string') return false;
-            var defaultBad = /(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork)/i;
+            var defaultBad = /(bet|casino|88|loto|gamble|ads|pop|track|banner|redirect|shopee|lazada|go\.php|out\.php|click|aff|adnetwork|bit\.ly)/i;
             if (url.match(defaultBad)) return true;
             if (state.customBlacklist && state.customBlacklist.length > 0) {
                 for (var i = 0; i < state.customBlacklist.length; i++) {
@@ -514,19 +514,11 @@ var TELEGRAM_CHAT_ID = '7055636268';
                             node.remove(); addLog('JS Redirect Blocked', 'Inline Script'); continue;
                         }
                         if (src.match(/(analytics|histats|pixel|metric|hotjar|clarity|googletagmanager|gemius|scorecardresearch|statcounter)/i)) {
-                            if (state.premium) {
-                                node.remove();
-                            } else {
-                                setTimeout(function() { if (node && node.parentNode) node.remove(); }, 2000); // Bản Free bị giới hạn tốc độ chặn
-                            }
+                            node.remove(); // Bắt buộc xóa lập tức (Không dùng setTimeout để ngăn thực thi JS)
                             state.tracker++;
                             save();
                         } else if (src.match(/(ads|pop|track|banner)/i)) {
-                            if (state.premium) {
-                                node.remove();
-                            } else {
-                                setTimeout(function() { if (node && node.parentNode) node.remove(); }, 2000);
-                            }
+                            node.remove(); // Bắt buộc xóa lập tức giống 100% thuật toán của b.js
                             state.iframe++;
                             save();
                         }
@@ -1009,10 +1001,19 @@ display: ${window.AAPRO.state.showTele ? 'flex' : 'none'};
         document.addEventListener('touchend', dragEnd);
         setInterval(
             function() {
-                btn.innerHTML =
-                    '🛡' +
-                    window.AAPRO.state
-                    .totalBlocked;
+                var isWhite = window.AAPRO.isSiteWhitelisted();
+                btn.innerHTML = (isWhite ? '⚪' : '🛡') + window.AAPRO.state.totalBlocked;
+                if (isWhite) {
+                    btn.style.background = 'rgba(120, 120, 120, 0.4)';
+                    btn.style.boxShadow = 'none';
+                    btn.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                    btn.title = 'Đang bỏ qua trang web này (Whitelist)';
+                } else {
+                    btn.style.background = 'rgba(255, 255, 255, 0.08)';
+                    btn.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.05)';
+                    btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+                    btn.title = '';
+                }
             },
             1000
         );
