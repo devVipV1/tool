@@ -1198,6 +1198,7 @@ display:none;
     </div>
     <div style="display: flex; gap: 5px; margin-bottom: 15px;">
         <input type="text" id="aapro-whitelist-input" placeholder="Tên miền trắng (vd: myweb.com)" style="flex:1; padding: 8px; border-radius: 8px; border: 1px solid var(--aapro-border-color); background: var(--aapro-bg-secondary); color: var(--aapro-text-primary); font-size: 12px; outline: none;">
+        <button id="aapro-whitelist-add-current" class="aapro-btn-ui" style="padding: 8px 10px; font-size: 12px; background: #17a2b8; border-color: #17a2b8; color: #fff;" title="Thêm trang hiện tại">➕ Trang này</button>
         <button id="aapro-whitelist-add" class="aapro-btn-ui" style="padding: 8px 12px; font-size: 12px; background: #28a745; border-color: #28a745; color: #fff;">Bỏ qua</button>
     </div>
     <div style="display: flex; gap: 10px;">
@@ -1529,6 +1530,21 @@ display:none;
                     whitelistInput.value = '';
                 } else {
                     window.AAPRO.toast('Tên miền đã tồn tại trong danh sách trắng!', 'info');
+                }
+            });
+        }
+
+        var whitelistAddCurrentBtn = document.getElementById('aapro-whitelist-add-current');
+        if (whitelistAddCurrentBtn) {
+            whitelistAddCurrentBtn.addEventListener('click', function() {
+                var domain = window.location.hostname.replace(/^www\./i, '');
+                if (!window.AAPRO.state.customWhitelist) window.AAPRO.state.customWhitelist = [];
+                if (!window.AAPRO.state.customWhitelist.includes(domain)) {
+                    window.AAPRO.state.customWhitelist.push(domain);
+                    window.AAPRO.save();
+                    window.AAPRO.toast('Đã thêm "' + domain + '" vào Danh sách trắng!', 'success');
+                } else {
+                    window.AAPRO.toast('Trang hiện tại đã nằm trong danh sách trắng!', 'info');
                 }
             });
         }
